@@ -12,7 +12,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
 
-st.set_page_config(page_title="Pixel Hospital System", page_icon="🕹️", layout="wide")
+st.set_page_config(page_title="Diabetes Prediction Program", page_icon="🕹️", layout="wide")
 
 custom_css = """
 <style>
@@ -20,42 +20,52 @@ custom_css = """
 
     /* Variables for adaptive modes */
     :root {
-        --bg-color: #f0fdf4;
+        --bg-color: #f8fafc;
         --panel-bg: #ffffff;
         --text-color: #000000;
-        --border-color: #000000;
-        --primary: #22c55e;
-        --secondary: #38bdf8;
-        --accent: #facc15;
+        --border-color: #0f766e;
+        --primary: #10b981;
+        --secondary: #34d399;
+        --accent: #84cc16;
         --danger: #ef4444;
-        --shadow-color: #000000;
+        --shadow-color: #cbd5e1;
+        --hover-bg: #fef08a; /* Soft yellow hover */
     }
 
     @media (prefers-color-scheme: dark) {
         :root {
-            --bg-color: #052e16;
+            --bg-color: #022c22;
             --panel-bg: #064e3b;
-            --text-color: #ecfdf5;
-            --border-color: #10b981;
-            --shadow-color: #022c22;
-            --primary: #4ade80;
-            --secondary: #7dd3fc;
-            --accent: #fde047;
+            --text-color: #f8fafc;
+            --border-color: #34d399;
+            --primary: #10b981;
+            --secondary: #4ade80;
+            --accent: #bbf7d0;
             --danger: #f87171;
+            --shadow-color: #020617;
+            --hover-bg: #86efac; /* Light green hover */
         }
     }
 
     /* Global Typography and Background */
     .stApp {
         background-color: var(--bg-color);
-        font-family: 'VT323', monospace !important;
         background-image: linear-gradient(rgba(34, 197, 94, 0.05) 50%, transparent 50%);
         background-size: 100% 4px; /* Scanline effect */
     }
 
-    p, span, div, h1, h2, h3, h4, h5, h6, label {
+    /* ========================
+       FONT FIX (SAFE TARGETING)
+       ======================== */
+    /* Target elements safely to avoid breaking Streamlit Material Icons */
+    .stApp, .stApp *{
         font-family: 'VT323', monospace !important;
-        letter-spacing: 1px;
+        letter-spacing: 1px !important;
+    }
+
+    .material-symbols-rounded, .material-icons, svg {
+        font-family: inherit !important;
+        letter-spacing: normal !important;
     }
 
     /* Centered Container */
@@ -101,9 +111,9 @@ custom_css = """
         transition: all 0.1s !important;
     }
     div.stButton > button:hover {
-        background-color: var(--secondary) !important;
-        color: #000 !important;
-        border-color: #000 !important;
+        background-color: var(--hover-bg) !important;
+        color: #000000 !important;
+        border-color: var(--border-color) !important;
     }
     div.stButton > button:active {
         transform: translate(2px, 2px) !important;
@@ -113,11 +123,12 @@ custom_css = """
     /* Primary Button */
     div.stButton > button[kind="primary"] {
         background-color: var(--primary) !important;
-        color: #000 !important;
-        border-color: #000 !important;
+        color: #000000 !important;
+        border-color: var(--border-color) !important;
     }
     div.stButton > button[kind="primary"]:hover {
-        background-color: var(--accent) !important;
+        background-color: var(--hover-bg) !important;
+        color: #000000 !important;
     }
 
     /* Sidebar Menu */
@@ -132,20 +143,21 @@ custom_css = """
         border: none !important;
         box-shadow: none !important;
         color: var(--text-color) !important;
-        padding: 12px 16px !important;
+        padding: 8px 12px !important;
         margin-bottom: 4px !important;
-        font-size: 1.5rem !important;
+        font-size: 0.8rem !important;
+        white-space: nowrap;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        background: var(--accent) !important;
-        color: #000 !important;
+        background: var(--hover-bg) !important;
+        color: #000000 !important;
         transform: none !important;
     }
     [data-testid="stSidebar"] .stButton > button[kind="primary"] {
         background: var(--primary) !important;
-        color: #000 !important;
-        border: 4px solid #000 !important;
-        box-shadow: 4px 4px 0px #000 !important;
+        color: #000000 !important;
+        border: 4px solid var(--border-color) !important;
+        box-shadow: 4px 4px 0px var(--shadow-color) !important;
     }
 
     /* Titles */
@@ -220,21 +232,23 @@ custom_css = """
     }
     .result-high {
         background-color: var(--danger);
-        color: #000;
+        color: #ffffff;
     }
     .result-low {
         background-color: var(--primary);
-        color: #000;
+        color: #ffffff;
     }
     .result-title {
         font-size: 3rem;
         font-weight: bold;
         margin-bottom: 12px;
         text-transform: uppercase;
+        color: inherit;
     }
     .result-prob {
         font-size: 1.6rem;
         font-weight: bold;
+        color: inherit;
     }
 
     /* Image wrapper */
@@ -250,9 +264,86 @@ custom_css = """
         box-shadow: 6px 6px 0px var(--shadow-color);
         object-fit: contain;
     }
+
+    /* ========================
+       INPUT & SELECTBOX FIX
+       ======================== */
+    div[data-baseweb="input"] > div, 
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="base-input"] {
+        background-color: var(--panel-bg) !important;
+        border: 3px solid var(--border-color) !important;
+        border-radius: 0px !important;
+        box-shadow: 3px 3px 0px var(--shadow-color) !important;
+    }
+
+    /* Only target inputs, NOT spans in select box, to avoid breaking icon */
+    div[data-baseweb="input"] input, 
+    div[data-baseweb="base-input"] input {
+        color: var(--text-color) !important;
+        font-family: 'VT323', monospace !important;
+        font-size: 1.2rem !important;
+    }
+
+    /* ========================
+       PLACEHOLDER FIX
+       ======================== */
+    ::placeholder {
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+    @media (prefers-color-scheme: dark) {
+        ::placeholder {
+            color: #94a3b8 !important;
+        }
+    }
+
+    /* ========================
+       DROPDOWN MENU FIX
+       ======================== */
+    ul[data-baseweb="menu"] {
+        background-color: var(--panel-bg) !important;
+        border: 4px solid var(--border-color) !important;
+        border-radius: 0px !important;
+    }
+    ul[data-baseweb="menu"] li {
+        color: var(--text-color) !important;
+        font-family: 'VT323', monospace !important;
+    }
+    ul[data-baseweb="menu"] li:hover {
+        background-color: var(--hover-bg) !important;
+        color: #000000 !important;
+    }
+
+    [data-testid="stSidebar"] *:not(svg):not(i):not([class*="material"]) {
+    font-family: 'VT323', monospace !important;
+    }
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
+
+def apply_plot_theme(ax, fig):
+    """Applies theme-aware colors to matplotlib axes"""
+    try:
+        base = st.get_option("theme.base")
+    except:
+        base = "light"
+
+    if base == "dark":
+        color = '#ecfdf5'
+    else:
+        color = '#0f172a'
+        
+    ax.tick_params(colors=color)
+    ax.xaxis.label.set_color(color)
+    ax.yaxis.label.set_color(color)
+    
+    for spine in ax.spines.values():
+        spine.set_edgecolor(color)
+
+    fig.patch.set_alpha(0)
+    ax.set_facecolor('none')
+    plt.tight_layout()
 
 def init_state():
     defaults = {
@@ -267,7 +358,7 @@ def init_state():
 init_state()
 
 # --- SIDEBAR NAVIGATION ---
-st.sidebar.markdown("<div style='padding: 10px 0 20px 0;'><h1 style='margin:0;'>SYSTEM MENU</h1></div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='padding: 10px 0 20px 0;'><h1 style='margin:0; color:var(--text-color);'>SYSTEM MENU</h1></div>", unsafe_allow_html=True)
 
 step_names = [
     "🏠 HOME",
@@ -301,21 +392,14 @@ if st.sidebar.button("REBOOT SYSTEM", use_container_width=True):
 # --- STEPS RENDERING ---
 
 def render_step_0():
-    st.markdown('<div class="hero-title">DIABETES DIAGNOSTIC TERMINAL<span class="blink">_</span></div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-subtitle">> PIXEL HOSPITAL SYSTEM v1.0</div>', unsafe_allow_html=True)
-    
-    st.markdown("""
-    <div class="pixel-img-wrapper">
-        <img class="pixel-img" src="https://drive.google.com/uc?export=view&id=1eYm4Aca0sOwEcC6NElXjxIXEP7DxQOOc" />
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="hero-title">DIABETES DIAGNOSTIC TERMINAL<span class="blink">_</span></div>', unsafe_allow_html=True)    
     
     st.markdown("<br>", unsafe_allow_html=True)
 
     with st.container(border=True):
         st.markdown('<div class="card-title">SYSTEM INSTRUCTIONS</div>', unsafe_allow_html=True)
         st.markdown("""
-        <div style="font-size: 1.4rem; line-height: 1.6;">
+        <div style="font-size: 1.4rem; line-height: 1.6; color: var(--text-color);">
         <b>[ROLE]:</b> DOCTOR<br>
         <b>[TASK]:</b> RUN DIAGNOSTICS ON PATIENT METABOLIC DATA<br>
         <b>[EXPECTED OUTPUT]:</b> PROBABILITY OF DIABETES RISK<br>
@@ -347,7 +431,7 @@ def render_step_1():
     
     with st.container(border=True):
         st.markdown('<div class="card-title">DATA TERMINAL</div>', unsafe_allow_html=True)
-        st.markdown("<b style='font-size: 1.2rem;'>> SHOWING TOP 5 RECORDS:</b>", unsafe_allow_html=True)
+        st.markdown("<b style='font-size: 1.2rem; color: var(--text-color);'>> SHOWING TOP 5 RECORDS:</b>", unsafe_allow_html=True)
         st.dataframe(df.head(5), use_container_width=True)
         
         if st.button("VIEW FULL DATA"):
@@ -360,13 +444,12 @@ def render_step_1():
         
         if plot_type == "Univariate":
             col = st.selectbox("SELECT FEATURE:", df.columns)
-            fig, ax = plt.subplots(figsize=(8, 4))
-            sns.histplot(df[col], kde=True, ax=ax, color='#22c55e', edgecolor='black', linewidth=2)
+            fig, ax = plt.subplots(figsize=(4.5, 2.5))
+            sns.histplot(df[col], kde=True, ax=ax, color='#16a34a', edgecolor='gray', linewidth=1)
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            fig.patch.set_alpha(0)
-            ax.patch.set_alpha(0)
-            st.pyplot(fig)
+            apply_plot_theme(ax, fig)
+            st.pyplot(fig, use_container_width=False)
             
         elif plot_type == "Bivariate":
             col1, col2 = st.columns(2)
@@ -374,19 +457,20 @@ def render_step_1():
                 x_col = st.selectbox("X-AXIS FEATURE:", df.columns)
             with col2:
                 y_col = st.selectbox("Y-AXIS FEATURE:", [c for c in df.columns if c != x_col])
-            fig, ax = plt.subplots(figsize=(8, 4))
-            sns.scatterplot(data=df, x=x_col, y=y_col, hue="Outcome", palette=["#38bdf8", "#ef4444"], s=80, edgecolor='black', linewidth=1.5, ax=ax)
+            fig, ax = plt.subplots(figsize=(4.5, 2.5))
+            sns.scatterplot(data=df, x=x_col, y=y_col, hue="Outcome", palette=["#38bdf8", "#ef4444"], s=40, edgecolor='gray', linewidth=1, ax=ax)
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
-            fig.patch.set_alpha(0)
-            ax.patch.set_alpha(0)
-            st.pyplot(fig)
+            apply_plot_theme(ax, fig)
+            st.pyplot(fig, use_container_width=False)
             
         elif plot_type == "Multivariate":
-            fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(df.corr(), annot=True, cmap="Greens", fmt=".2f", ax=ax, linewidths=2, linecolor='black')
-            fig.patch.set_alpha(0)
-            st.pyplot(fig)
+            fig, ax = plt.subplots(figsize=(8, 5))
+            plt.xticks(rotation=45, ha='right')
+            plt.yticks(rotation=0)
+            sns.heatmap(df.corr(), annot=True, cmap="Greens", fmt=".2f", ax=ax, linewidths=1, linecolor='gray')
+            apply_plot_theme(ax, fig)
+            st.pyplot(fig, use_container_width=False)
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("PROCEED TO FEATURE SELECTION", type="primary", use_container_width=True):
@@ -399,7 +483,7 @@ def render_step_2():
     
     with st.container(border=True):
         st.markdown('<div class="card-title">ISOLATE VARIABLES</div>', unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.4rem;'><b>> SELECT FEATURES FOR DIAGNOSTIC MODEL:</b></p>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.4rem; color: var(--text-color);'><b>> SELECT FEATURES FOR DIAGNOSTIC MODEL:</b></p>", unsafe_allow_html=True)
         
         df = st.session_state.df
         features = [col for col in df.columns if col != 'Outcome']
@@ -456,11 +540,11 @@ def render_step_3():
     with st.container(border=True):
         st.markdown('<div class="card-title">PROCESSED DATA OVERVIEW</div>', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
-        c1.markdown(f"<div style='font-size: 1.6rem;'><b>> TRAINING SAMPLES:</b> {X_train_scaled.shape[0]}</div>", unsafe_allow_html=True)
-        c2.markdown(f"<div style='font-size: 1.6rem;'><b>> TESTING SAMPLES:</b> {X_test_scaled.shape[0]}</div>", unsafe_allow_html=True)
+        c1.markdown(f"<div style='font-size: 1.6rem; color: var(--text-color);'><b>> TRAINING SAMPLES:</b> {X_train_scaled.shape[0]}</div>", unsafe_allow_html=True)
+        c2.markdown(f"<div style='font-size: 1.6rem; color: var(--text-color);'><b>> TESTING SAMPLES:</b> {X_test_scaled.shape[0]}</div>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         
-        st.markdown("<b style='font-size: 1.2rem;'>> PREPROCESSED SAMPLE (TOP 5):</b>", unsafe_allow_html=True)
+        st.markdown("<b style='font-size: 1.2rem; color: var(--text-color);'>> PREPROCESSED SAMPLE (TOP 5):</b>", unsafe_allow_html=True)
         st.dataframe(X_train_scaled.head(5), use_container_width=True)
             
     st.markdown("<br>", unsafe_allow_html=True)
@@ -557,13 +641,13 @@ def render_step_5():
             [f"FALSE NEG (FN)\n{cm[1,0]}", f"TRUE POS (TP)\n{cm[1,1]}"]
         ])
         
-        fig, ax = plt.subplots(figsize=(7, 4.5))
+        fig, ax = plt.subplots(figsize=(5, 3))
         sns.heatmap(cm, annot=annot_labels, fmt='', cmap='Greens', ax=ax, cbar=False, 
-                    annot_kws={"size": 12, "weight": "bold", "family": "monospace"}, linewidths=2, linecolor='black')
+                    annot_kws={"size": 10, "weight": "bold", "family": "monospace"}, linewidths=1, linecolor='gray')
         ax.set_xlabel('PREDICTED LABEL', fontweight='bold', labelpad=12)
         ax.set_ylabel('TRUE LABEL', fontweight='bold', labelpad=12)
-        fig.patch.set_alpha(0)
-        st.pyplot(fig)
+        apply_plot_theme(ax, fig)
+        st.pyplot(fig, use_container_width=False)
         
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("LAUNCH DEPLOYMENT SYSTEM", type="primary", use_container_width=True):
@@ -610,7 +694,7 @@ def render_step_6():
             <div class="result-card result-high">
                 <div class="result-title">⚠️ HIGH RISK DETECTED ⚠️</div>
                 <div class="result-prob">DIAGNOSIS: DIABETIC</div>
-                <div style="font-size:1.4rem; margin-top:10px;">PROBABILITY: {prob*100:.1f}%</div>
+                <div style="font-size:1.4rem; margin-top:10px; color:#0f172a;">PROBABILITY: {prob*100:.1f}%</div>
             </div>
             """
         else:
@@ -618,7 +702,7 @@ def render_step_6():
             <div class="result-card result-low">
                 <div class="result-title">✅ PATIENT STABLE ✅</div>
                 <div class="result-prob">DIAGNOSIS: NON-DIABETIC</div>
-                <div style="font-size:1.4rem; margin-top:10px;">PROBABILITY: {(1-prob)*100:.1f}%</div>
+                <div style="font-size:1.4rem; margin-top:10px; color:#0f172a;">PROBABILITY: {(1-prob)*100:.1f}%</div>
             </div>
             """
         st.markdown(res_html, unsafe_allow_html=True)
