@@ -277,19 +277,25 @@ custom_css = """
         box-shadow: 3px 3px 0px var(--shadow-color) !important;
     }
 
-    /* Only target inputs, NOT spans in select box, to avoid breaking icon */
+    /* Ensure inputs, selectbox text, and labels have strong contrast */
     div[data-baseweb="input"] input, 
-    div[data-baseweb="base-input"] input {
+    div[data-baseweb="base-input"] input,
+    div[data-baseweb="select"] * {
         color: var(--text-color) !important;
-        font-family: 'VT323', monospace !important;
-        font-size: 1.2rem !important;
+    }
+    
+    label, 
+    div[role="radiogroup"] *, 
+    div[data-baseweb="radio"] *, 
+    div[data-baseweb="checkbox"] * {
+        color: var(--text-color) !important;
     }
 
     /* ========================
        PLACEHOLDER FIX
        ======================== */
     ::placeholder {
-        color: #64748b !important;
+        color: #1e293b !important; /* Dark slate for high contrast in light mode */
         opacity: 1 !important;
     }
     @media (prefers-color-scheme: dark) {
@@ -318,6 +324,12 @@ custom_css = """
     [data-testid="stSidebar"] *:not(svg):not(i):not([class*="material"]) {
     font-family: 'VT323', monospace !important;
     }
+
+    /* ========================
+    FIX SIDEBAR TOGGLE ICON
+    ======================== */
+    [data-testid="collapsedControl"] button {
+    font-family: sans-serif !important;
 </style>
 """
 st.markdown(custom_css, unsafe_allow_html=True)
