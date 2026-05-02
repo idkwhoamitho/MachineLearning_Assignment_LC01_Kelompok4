@@ -141,9 +141,21 @@ custom_css = """
 
     /* Sidebar Menu */
     [data-testid="stSidebar"] {
-        background-color: var(--panel-bg);
-        border-right: 4px solid var(--border-color);
+    background-color: var(--panel-bg);
+    border-right: 4px solid var(--border-color);
+    height: 100vh !important;
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+    scroll-bar: 
     }
+
+    [data-testid="stSidebar"] > div:first-child {
+        overflow-y: auto !important;
+        flex: 1 1 auto;
+        padding-bottom: 10px;
+    }
+
     [data-testid="stSidebar"] .stButton > button {
         justify-content: flex-start !important;
         text-align: left !important;
@@ -384,7 +396,7 @@ st.markdown(custom_css, unsafe_allow_html=True)
 
 def init_state():
     defaults = {
-        'max_step': 0, 'current_step': 0, 'df': None, 'selected_features': [],
+        'max_step': 0, 'current_step': 0, 'show_about': False, 'df': None, 'selected_features': [],
         'model': None, 'imputer': None, 'scaler': None,
         'X_train': None, 'X_test': None, 'y_train': None, 'y_test': None
     }
@@ -395,11 +407,10 @@ def init_state():
 init_state()
 
 # --- SIDEBAR NAVIGATION ---
-st.sidebar.markdown("<div style='padding: 10px 0 10px 0;'><h1 style='margin:0; color:var(--text-color); font-family: \"VT323\", monospace;'>SYSTEM MENU</h1></div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='padding: 5px 0 5px 0;'><h1 style='margin:0; color:var(--text-color); font-family: \"VT323\", monospace;'>SYSTEM MENU</h1></div>", unsafe_allow_html=True)
 
 progress_percent = int((st.session_state.current_step / 6.0) * 100)
 st.sidebar.progress(st.session_state.current_step / 6.0, text=f"WORKFLOW PROGRESS: {progress_percent}%")
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
 
 step_names = [
     "🏠 HOME",
@@ -418,16 +429,22 @@ for i, name in enumerate(step_names):
         label = f"🔒 {name}"
         
     disabled = i > st.session_state.max_step
-    btn_type = "primary" if i == st.session_state.current_step else "secondary"
+    btn_type = "primary" if (i == st.session_state.current_step and not st.session_state.show_about) else "secondary"
     
     if st.sidebar.button(label, disabled=disabled, use_container_width=True, key=f"nav_{i}", type=btn_type):
+        st.session_state.show_about = False
         st.session_state.current_step = i
         st.rerun()
 
-st.sidebar.markdown("<br><br>", unsafe_allow_html=True)
-if st.sidebar.button("REBOOT SYSTEM", use_container_width=True):
+if st.sidebar.button("🔄️ REBOOT SYSTEM", use_container_width=True):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
+    st.rerun()
+
+st.sidebar.markdown("<hr style='margin: 10px 0; border: 2px dashed var(--border-color);'>", unsafe_allow_html=True)
+about_btn_type = "primary" if st.session_state.show_about else "secondary"
+if st.sidebar.button("ℹ️ ABOUT", use_container_width=True, type=about_btn_type):
+    st.session_state.show_about = True
     st.rerun()
 
 # --- STEPS RENDERING ---
@@ -793,7 +810,81 @@ def render_step_6():
             """
         st.markdown(res_html, unsafe_allow_html=True)
 
-if st.session_state.current_step == 0:
+def render_about_page():
+    st.markdown('<div class="hero-title">ABOUT PROJECT<span class="blink">_</span></div>', unsafe_allow_html=True)
+    
+    with st.container(border=True):
+        st.markdown('<div class="card-title">PROJECT DESCRIPTION</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="heartbeat-box">
+            <div class="heartbeat-content">
+                This application was developed as part of a Machine Learning course assignment at Bina Nusantara University. The project focuses on implementing a complete machine learning pipeline, starting from Exploratory Data Analysis (EDA) to model deployment. Through this application, we aim to demonstrate a practical use of predictive analytics in the healthcare domain, specifically for diabetes risk prediction.
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with st.container(border=True):
+        st.markdown('<div class="card-title">MAIN OBJECTIVES</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="heartbeat-box">
+            <div class="heartbeat-content">
+                <ul>
+                    <li>Understand and implement the end-to-end machine learning pipeline from Exploratory Data Analysis (EDA) to deployment.</li>
+                    <li>Evaluate and compare multiple classification algorithms for medical diagnostic accuracy.</li>
+                    <li>Develop an interactive dashboard to visualize data patterns and provide real-time risk assessments.</li>
+                </ul>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        with st.container(border=True):
+            st.markdown('<div class="card-title">DATASET INFO</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="heartbeat-box">
+                <div class="heartbeat-content">
+                    <b>Name:</b> Pima Indians Diabetes Dataset<br>
+                    <b>Source:</b> UCI Machine Learning Repository<br>
+                    <b>Scope:</b> Medical diagnostic measurements of Pima Indian heritage.<br>
+                    <b>Link: <a href="https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database" target="_blank" style="color: inherit; text-decoration: underline; font-weight: bold;">Kaggle: Pima Indians Database</a></b>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with col2:
+        with st.container(border=True):
+            st.markdown('<div class="card-title">TEAM MEMBERS</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="heartbeat-box">
+                <div class="heartbeat-content">
+                    <b>Kelompok 4 - LC01</b><br>
+                    • 2802397306 - Edwin Antonie<br>
+                    • 2802529203 - Hasan<br>
+                    • 2802401846 - Wesley Sumedha Deano<br>
+                    • 2802391006 - Maximilianus Ronald
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    with st.container(border=True):
+        st.markdown('<div class="card-title">TECHNOLOGIES USED</div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div class="heartbeat-box">
+            <div class="heartbeat-content">
+                <span style="color:var(--primary); font-weight:bold;">Streamlit</span> (User Interface), 
+                <span style="color:var(--secondary); font-weight:bold;">Scikit-learn</span> (Machine Learning), 
+                <span style="color:var(--accent); font-weight:bold;">Pandas</span> (Data Processing), 
+                <span style="color:var(--primary); font-weight:bold;">NumPy</span> (Numerical Computation), 
+                <span style="color:var(--secondary); font-weight:bold;">Matplotlib & Seaborn</span> (Data Visualization)
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+if st.session_state.show_about:
+    render_about_page()
+elif st.session_state.current_step == 0:
     render_step_0()
 elif st.session_state.current_step == 1:
     render_step_1()
